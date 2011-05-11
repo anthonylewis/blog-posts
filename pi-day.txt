@@ -1,0 +1,38 @@
+## Happy Pi Day
+
+In honor of [Pi Day](http://www.piday.org/), I 
+thought I would write a little Ruby script to 
+generate pi to a few decimal places.
+
+A quick trip to the [Wikipedia page for pi](http://en.wikipedia.org/wiki/Pi#Computation_in_the_computer_age)
+turned up many formulas for computing pi. I took
+one of the easy ones and set about writing some
+code.
+
+Ruby doesn't have a built in method for computing
+the factorial. I found a nice, functional example
+at the [Rosetta Code wiki](http://rosettacode.org/wiki/Factorial#Ruby).
+
+Putting that all together, I ended up with this:
+
+    def fact(n)
+      (1..n).reduce(1, :*)
+    end
+
+    sum = 0.0
+
+    (0..8).each do |n|
+      a = fact(2 * n) ** 3.0
+      b = 42.0 * n + 5.0
+      c = fact(n) ** 6.0
+      d = 16.0 ** (3.0 * n + 1.0)
+
+      sum += (a * b) / (c * d)
+
+      puts 1.0 / sum
+    end
+
+Note that I'm only iterating 8 times. On my PC, that
+gives pi out to 15 decimal places which is all of the
+precision available in a floating point number.
+

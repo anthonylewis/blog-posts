@@ -1,0 +1,58 @@
+## To Hex and Back (With Ruby)
+
+I am a big fan of plain text. It is easy to view, and easy to
+edit. Unfortunately, it is sometimes necessary to work with 
+binary files and data.
+
+Back in the day, I would use a hex editor to open binary files and
+decipher their contents. I don't have a need for a hex editor anymore,
+but I would like to occasionally view binary data.
+
+After some intense Googling and Ruby doc reading, I came up with a 
+few methods to convert a binary string to hex, and convert a 
+string of hex back to the original binary.
+
+### Bin to Hex
+
+To convert a string to it hex representation, first take each byte,
+convert it to hex, then join all of the hex digits back together.
+
+    def bin_to_hex(s)
+      s.each_byte.map { |b| b.to_s(16) }.join
+    end
+
+If you like spaces between the hex digits, change join to join(' ')
+
+### Hex to Bin
+
+Converting the string of hex digits back to binary is just as easy.
+Take the hex digits two at a time (since each byte can range from
+00 to FF), convert the digits to a character, and join them back together.
+
+    def hex_to_bin(s)
+      s.scan(/../).map { |x| x.hex.chr }.join
+    end
+
+If you find yourself using these frequently in a project, you could
+add the methods to the String class.
+
+### TIMTOWTDI
+
+Of course, there is more than one way to do this.  Ruby also provides
+the handy pack and unpack methods for Arrays and Strings respectively.
+
+These are a little more cryptic since you need to know the meaning
+of the format string to understand what's going on.
+
+    def bin_to_hex(s)
+      s.unpack('H*').first
+    end
+
+    def hex_to_bin(s)
+      s.scan(/../).map { |x| x.hex }.pack('c*')
+    end
+
+These methods are no replacement for a hex editor, but if need to look
+at an encryption key or some other short string of binary, they can
+be just the thing.
+

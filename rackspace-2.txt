@@ -1,0 +1,117 @@
+# Rails on Rackspace Cloud - Part 2
+
+Part one covered setting up a new Ubuntu server and
+getting Ruby 1.9.2 up and running with rvm.
+
+Now we will finish the setup with a Firewall, MySQL,
+Apache2, Passenger, and Capistrano.
+
+## Installing a Firewall
+
+Before we install the database and other services,
+lets get the firewall set up.  On Ubuntu, I like to
+use the Uncomplicated Firewall - UFW.
+
+    sudo apt-get install ufw
+
+That will install the firewall.  Now set the defaults,
+add some rules, and enable the firewall.
+
+    sudo ufw default deny
+    sudo ufw allow ssh
+    sudo ufw allow http
+    sudo ufw enable
+
+To see the current rules, you can check the status.
+
+    sudo ufw status
+
+Now the only ports open to the internet are SSH (22) and
+HTTP (80).
+
+## Installing MySQL
+
+Now that we're a little more protected from the outside world,
+lets install the database.
+
+    sudo apt-get install mysql-server mysql-client libmysqlclient-dev
+
+And install the mysql2 gem.
+
+    gem install mysql2
+
+Remember to 'rvm use 1.9.2' if you didn't set it as the default.
+
+## Installing Apache and Passenger
+
+The database is ready to go at this point, now we need a web server.
+
+    sudo apt-get install apache2 libcurl4-openssl-dev apache2-prefork-dev \
+                         libapr1-dev libaprutil1-dev
+
+That will install Apache2 and the extra development packages needed
+by Passenger.  Now install the Passenger gem.
+
+    gem install passenger
+
+Now we're ready to install the Passenger Apache2 module.  Note, this
+doesn't actually install anything.  It just builds the module and
+gives instructions for updating the configuration.
+
+    passenger-install-apache2-module
+
+Now we need to create a new module load file to tell Apache about
+Passenger.
+
+    sudo vim /etc/apache2/mods-available/passenger.load
+
+Here are the contents of passenger.load.  The two lines should
+be all on one line.
+
+    LoadModule passenger_module 
+        /home/testapp/.rvm/gems/ruby-1.9.2-p180/gems/passenger-3.0.5/ext/apache2/mod_passenger.so
+    PassengerRoot /home/testapp/.rvm/gems/ruby-1.9.2-p180/gems/passenger-3.0.5
+    PassengerRuby /home/testapp/.rvm/wrappers/ruby-1.9.2-p180/ruby
+
+If we did everything right, we can enable the Passenger module now.
+
+    sudo a2enmod passenger
+
+Now we need to set up our virtual host under sites-available.
+
+    sudo vim /etc/apache2/sites-available/testapp
+
+Here are the contents of that file.  You will obviously need to 
+replace the xx.xx.xx.xx with the IP address of your server.
+
+    <VirtualHost *:80>
+      ServerName xx.xx.xx.xx
+      DocumentRoot /home/testapp/testapp/public
+      <Directory /home/testapp/testapp/public>
+        AllowOverride all
+        Options -MultiViews
+      </Directory>
+    </VirtualHost>
+
+Disable the default web site and enable our new test application.
+
+    sudo a2dissite default
+    sudo a2ensite testapp
+
+## Setup a simple Rails App
+
+Create a simple Rails application in your home directory just
+to make sure everything is working.
+
+    rails new ~/testapp
+    cd ~/testapp
+    bundle install
+    rake db:migrate RAILS_ENV=production
+
+Finally, reload the Apache2 configuration.
+
+    sudo /etc/init.d/apache2 reload
+
+Go to your server's IP address in your browser and you should
+see the default Ruby on Rails index page. 
+

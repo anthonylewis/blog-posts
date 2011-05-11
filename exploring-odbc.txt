@@ -1,0 +1,97 @@
+## Exploring ODBC with Ruby DBI
+
+I recently found myself in an interesting situation.
+I needed to extract data from a database. Unfortunately, 
+all I had to work with was an ODBC name.
+
+If this were a MySQL database, I would have used the 
+command-line interface to check out the structure and
+see what was available.
+
+In this case, I didn't have a command-line interface.
+What I did have was Ruby and irb.  Here's how I got the
+job done. 
+
+### Required Gems
+
+Three gems are required to make this work.  First, we
+need dbi and a driver (or dbd).  The dbd-odbc driver also
+requires the ruby-odbc gem.
+
+    dbi
+    dbd-odbc
+    ruby-odbc
+
+In order to install ruby-odbc on Windows, you will need to
+compile it from source.  I used the excellent 
+[DevKit](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit)
+provided with the [RubyInstaller](http://rubyinstaller.org/) and 
+had no problems.
+
+### Connect
+
+Let's assume that the ODBC Data Source Name is "TestData".
+First, we require the DBI library, then connect to the data
+source.
+
+    require 'DBI'
+     
+    dbh = DBI.connect("DBI:ODBC:TestData")
+
+You can also pass a username and password after the connection
+string if required.
+
+### List and Describe Tables
+
+Now that we have a connection, let's see what tables are
+available.
+
+    dbh.tables
+
+My test database only has one table.  It's called "Table1".
+Let's list the columns in this table.
+
+    dbh.columns "Table1"
+
+This will tell us the type of data stored in each field in
+addition to the name.
+
+### Query For Data
+
+In order to see the actual data, we can prepare and execute
+an SQL query.  In this case, the separate prepare and execute
+is not really necessary, but it's a good habit to get into.
+
+    sth = dbh.prepare("SELECT * FROM Table1")
+    sth.execute
+    
+    row = sth.fetch
+
+The fetch method will return a row of data at a time until 
+there is not more data.  At that point it returns nil. Calling
+fetch again after it returns nil will result in an exception.
+
+### A Complete Example
+
+Here's a simple example of connecting to the ODBC database and
+displaying all of the data in a tab separated format.
+
+    require 'DBI'
+    
+    dbh = DBI.connect("DBI:ODBC:TestData")
+    
+    sth = dbh.prepare("SELECT * FROM Table1")
+    sth.execute
+    
+    puts sth.column_names.join("\t")
+    
+    while row = sth.fetch
+      puts row.join("\t")
+    end
+    
+    sth.finish
+    dbh.disconnect
+
+You could also require the CSV class and use it to generate comma-separated
+output. 
+

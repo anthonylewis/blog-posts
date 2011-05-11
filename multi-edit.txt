@@ -1,0 +1,89 @@
+# Editing multiple records with Rails
+
+I recently had a requirement to create a single form with data
+from more than one record. This is a simple request, but I had
+never done it before in Rails.
+
+After experimenting for a while, and reading quite a few forum 
+posts and StackOverflow answers, I came up with a working 
+solution.  Hopefully this will save someone a little time in
+the future.
+
+First, let's create a simple Rails app for managing users.  Each user
+will have a first name, last name, and e-mail address. I'm using
+scaffolding to generate the code.
+
+    rails new multi_edit
+    cd multi_edit
+    bundle install
+    rails g scaffold User first_name:string last_name:string email:string
+    rake db:migrate
+
+Next, add the new routes for editing all users. I tried to stick to the
+RESTful convention with these. I'm just using the word 'all' in place of the
+:id.
+
+    match 'users/all/edit' => 'users#edit_all', :as => :edit_all, :via => :get
+    match 'users/all' => 'users#update_all', :as => :update_all, :via => :put
+
+Now, let's add the edit_all method to users_controller.rb to get started.  The
+only thing it needs to do is get all users.
+
+    def edit_all
+      @users = User.all
+    end
+
+Next, we build the form for editing all users.
+
+    <%= form_for :user, :url => update_all_path, 
+          :html => { :method => :put } do %>
+      <table>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>E-Mail</th>
+        </tr>
+        <% @users.each do |user| %>
+          <%= fields_for "user[]", user do |user_fields| %>
+        <tr>
+          <td><%= user_fields.text_field :first_name %></td>
+          <td><%= user_fields.text_field :last_name %></td>
+          <td><%= user_fields.email_field :email %></td>
+        </tr>
+          <% end %>
+        <% end %>
+      </table>
+
+      <div class="actions">
+        <%= submit_tag %>
+      </div>
+    <% end %>
+
+The interesting part of this code starts around line 9.  As expected, we
+iterate over the users with @users.each.
+
+The next line tells Rails to create fields for each user and to name them 
+as an array. For example, user_fields.text_field :first_name creates a text 
+field named "user[1][first_name]".
+
+The params hash will include a 'user' key that contains a hash of information 
+for each user.  The key for each of these hashes will be the user id.
+
+Now that we know what the params will look like, it's pretty straight
+forward to write the update_all method.
+
+    def update_all
+      params['user'].keys.each do |id|
+        @user = User.find(id.to_i)
+        @user.update_attributes(params['user'][id])
+      end
+      redirect_to(users_url)
+    end
+ 
+We iterate over each key in params['user'], then find and update
+the user associated with that id. I am leaving error checking as
+an exercise for the reader...
+
+The complete source for this application is on my GitHub page at
+[https://github.com/anthonylewis/multi_edit](https://github.com/anthonylewis/multi_edit)
+

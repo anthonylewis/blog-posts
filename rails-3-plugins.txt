@@ -1,0 +1,4 @@
+# Rails 3 Plugins
+
+
+    bundle gem date_filter
