@@ -1,4 +1,128 @@
-# Rails 3 Plugins
+# Your First Rails 3 Plugin
 
+On several different projects I have needed to find the
+newest and oldest record in certain models. The code
+to do this is pretty simple (especially in Rails 3).
+
+For example, here is a snippet to find the newest
+Post:
+
+    @post = Post.order('created_at DESC').first
+
+We can make this even better by defining a method
+in the Post class like this:
+
+    def newest
+      order('created_at DESC').first
+    end
+
+With this new method our code becomes:
+
+    @post = Post.newest
+
+But now we're faced with having to add that method
+to lots of different models. This sounds like a perfect
+job for a simple Rails 3 plugin.
+
+### It's Just a Gem
+
+Plugins in Rails 3 are created just like any other Ruby gem.
+You can use whatever you like to create a new gem. Currently,
+I'm using Bundler:
 
     bundle gem date_filter
+
+This will create several files for you.  The most important
+are the gemspec file and the contents of the lib directory.
+
+### The gemspec
+
+Your gemspec file tells the world about your gem.  The first thing
+you'll want to do is edit this file and fill in the information marked
+with TODO - your name, e-mail address, gem summary, and gem description.
+
+The rest of the file should take care of itself. Note that the gem
+version is stored in `date_filter/version.rb`.  Also, the list of files, 
+test files, and executables is filled in automatically with git commands.
+
+### The lib directory
+
+Inside the lib directory you'll find a file called `date_filter.rb` and
+a directory called `date_filter`.  A common practice is to keep the
+contents of `date_filter.rb` pretty minimal.
+
+Most of your actual code should go in separate files inside the date_filter
+directory.  For example, here is my `date_filter.rb` file in its entirety:
+
+    require 'active_record'
+    require File.expand_path('../date_filter/base', __FILE__)
+
+    ActiveRecord::Base.class_eval { include DateFilter::Base }
+
+Note that I am requiring ActiveRecord here.  This is based on wycats advice -
+[If You Override Something, Require It](http://weblog.rubyonrails.org/2010/2/9/plugin-authors-toward-a-better-future)
+
+Next I require `base.rb` inside the `date_filter` directory. This contains
+the source for the plugin.
+
+The last line actually includes my code into `ActiveRecord::Base`.
+Since I am adding class methods, I use `class_eval`.
+
+### date_filter/base.rb
+
+Finally, here is the code for the plugin. It's common practice to
+separate class methods from instance methods in Rails plugins.  In this
+case I have a separate module for the class methods.
+
+When `DateFilter::Base` is included into `ActiveRecord::Base` the method
+`included` is called.  This method then extends `ActiveRecord::Base` with
+the methods in the `ClassMethods` module.
+
+    module DateFilter
+      module Base
+        def self.included(base)
+          base.send :extend, ClassMethods
+        end
+
+        module ClassMethods
+          def newest
+            order('created_at DESC').first
+          end
+
+          def oldest
+            order('created_at ASC').first
+          end
+        end
+      end
+    end
+
+### Building and Installing
+
+If you made it this far, you're ready to build and install your new
+plugin. Bundler includes some rake tasks to help with this 
+automatically. You can see these by running `rake -T`
+
+    rake build
+    rake install
+    rake release
+
+`rake build` will create a directory called pkg and build your new gem
+into this directory. You can then install it with the gem command.
+
+`rake install` will build and install your new gem. To use it in a Rails
+project, you will need to add it to your Gemfile and run `bundle install`.
+
+### Releasing
+
+If you have an account at [RubyGems.org](http://www.rubygems.org/) you can also
+release your new gem. Check your profile page for your API key.  Include your API 
+key in `~/.gem/credentials` as instructed, then run `rake release` to build and
+upload your gem to the site.
+
+This should get you started building your own Rails 3 plugins.  There are still a 
+couple of pretty important things missing from this process - tests and documentation.
+I plan to cover both of these in a future post.
+
+The complete source for this plugin is up at [github](https://github.com/anthonylewis/date_filter).
+The gem is also available at [RubyGems.org](https://rubygems.org/gems/date_filter).
+
