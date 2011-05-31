@@ -1,0 +1,6 @@
+
+git checkout -b new_branch
+
+git branch
+
+git checkout master
