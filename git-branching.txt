@@ -7,3 +7,5 @@ git checkout master
 
 git merge new_branch
 
+git branch -d new_branch
+
