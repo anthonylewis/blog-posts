@@ -1,0 +1,11 @@
+
+git checkout -b new_branch
+
+git branch
+
+git checkout master
+
+git merge new_branch
+
+git branch -d new_branch
+
