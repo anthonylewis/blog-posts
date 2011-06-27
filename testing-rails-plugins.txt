@@ -1,3 +1,14 @@
 # Testing Rails Plugins
 
+In the last post, we looked at writing and deploying
+a Rails plugin to extend ActiveRecord::Base. Now, let's
+see about adding a test suite to verify that everything
+is working as it should.
+
+The best practice is to add tests as you go along,
+but for a simple plugin such as this (and to keep the
+blog posts simple) we'll cover the tests separately.
+
+## RSpec
+
 
